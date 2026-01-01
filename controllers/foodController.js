@@ -1,0 +1,181 @@
+const { get } = require('mongoose')
+const foodModel = require('../models/foodModel')
+
+
+const createFoodController = async (req,res) => {
+    try {
+        const { title, description, price, imageUrl, foodTags, category, code, isAvailable, restaurant, rating, ratingCount } = req.body
+        if(!title || !description || !price || !restaurant){
+            return res.status(400).send({
+                success:false,
+                message:'Masukkan Data Anda dengan benar'
+            
+            })
+        }
+        const newFood = new foodModel({
+            title, description, price, imageUrl, foodTags, category, code, isAvailable, restaurant, rating, ratingCount
+        })
+
+        if(rating > 5 || rating < 0){
+            return res.status(400).send({
+                success:false,
+                message:'Rating harus diantara 0-5'
+            })
+        }
+
+        await newFood.save()
+        res.status(201).send({
+            success:true,
+            message:'Food Created',
+            newFood
+        })
+    } catch (e) {
+        res.status(500).send({
+            success:false,
+            message:e.message
+        })
+    }
+}
+
+const getAllFoodController = async (req,res) =>{
+    try {
+        const checkFood = await foodModel.find()
+        if(!checkFood){
+            return res.status(400).send({
+                success:false,
+                message:'Food Not Found'
+            })
+        }
+        res.status(200).send({
+            success:true,
+            message:'Food Found',
+            total: checkFood.length,
+            checkFood
+        })
+    } catch (e) {
+        res.status(500).send({
+            success:false,
+            message:e.message
+        })
+    }
+}
+
+const getFoodController =  async (req,res) => {
+    try {
+        const id = req.params.id
+        if(!id){
+            return res.status(400).send({
+                success:false,
+                message:'Please Fill All The Fields'
+            })
+        }
+        const checkFood = await foodModel.findById({_id: id})
+        if(!checkFood){
+            return res.status(400).send({
+                success:false,
+                message:'Food Not Found'
+            })
+        }
+        res.status(200).send({
+            success:true,
+            message:'Food Found',
+            checkFood
+        })
+    } catch (e) {
+        res.status(500).send({
+            success:false,
+            message:e.message
+        })
+    }
+}
+
+const getFoodByRestaurantController = async (req,res) => {
+
+    try {
+         const idRestaurant = req.params.id
+    if(!idRestaurant) {
+        return res.status(400).send({
+            success:false,
+            message:'Please Fill All The Fields'
+        })
+    }
+    const RestaurantFood  = await foodModel.find({restaurant:idRestaurant})
+    if(!RestaurantFood){
+        return res.status(400).send({
+            success:false,
+            message:'Food Not Found'
+        })
+    }
+    res.status(200).send({
+        success:true,
+        message:'Food Found',
+        RestaurantFood
+    })     
+    } catch (e) {
+        res.send(500).send({
+            success:false,
+            message:e.message
+        })
+    }
+}
+
+const updateFoodController = async (req,res) => {
+    try {
+        const id = req.params.id
+        if(!id){
+            return res.status(400).send({
+                success:false,
+                message:'Please Fill All The Fields'
+            })
+        }
+        const { title, description, price, imageUrl, foodTags, category, code, isAvailable, rating, restaurant, ratingCount } = req.body
+        const updateFood = await foodModel.findByIdAndUpdate({_id:id}, {title, description, price, imageUrl, foodTags, category, restaurant, code, isAvailable, rating, ratingCount}, {new:true, runValidators:true})
+        if(!updateFood){
+            return res.status(400).send({
+                success:false,
+                message:'Food Not Found'
+            })
+        }
+
+        res.status(200).send({
+            success:true,
+            message:'Food Updated',
+            updateFood
+        })
+    } catch (error) {
+        res.send(500).send({
+            success:false,
+            message:error.message
+        })
+    }
+}
+
+const deleteFoodController = async (req, res) => {
+    try {
+        const id = req.params.id
+        if(!id){
+            return res.status(400).send({
+                success:false,
+                message:'Please Fill All The Fields'
+            })
+        }
+        const checkFood = await foodModel.findByIdAndDelete(id)
+        if(!checkFood){
+            return res.status(400).send({
+                success:false,
+                message:'Food Not Found'
+            })
+        }
+        res.status(200).send({
+            success:true,
+            message:'Food Deleted',
+        })
+    } catch (e) {
+        res.send(500).send({
+            success:false,
+            message:e.message
+        })
+    }
+}
+
+module.exports = { createFoodController, getAllFoodController, getFoodController, getFoodByRestaurantController, updateFoodController, deleteFoodController } 
