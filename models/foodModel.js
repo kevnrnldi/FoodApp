@@ -31,9 +31,7 @@ const foodSchema = new mongoose.Schema({
         default : true
     },
     restaurant:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:'Restaurant',
-        required:true
+         type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant' 
     },
     rating : {
         type : Number,

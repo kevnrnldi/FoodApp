@@ -40,7 +40,9 @@ try{
 
 const getAllRestaurantController = async (req,res) => {
     try{
-        const checkRestaurant = await restaurantModel.find()
+        const {keyword} = req.query
+        const query = keyword ? { title: { $regex: keyword, $options: 'i' } } : {};
+        const checkRestaurant = await restaurantModel.find(query)
         if(!checkRestaurant){
             return res.status(400).send({
                 success:false,

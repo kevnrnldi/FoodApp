@@ -30,7 +30,9 @@ const createCategoriesController = async (req,res) => {
 
 const getAllCategoriesController = async (req, res) => {
     try {
-        const checkCategories = await categoriesModel.find()
+        const {keyword} = req.query
+        const query = keyword ? { title: { $regex: keyword, $options: 'i' } } : {};
+        const checkCategories = await categoriesModel.find(query).populate('foods','title price imageUrl')
         if(!checkCategories){
             return res.status(400).send({
                 success:false,

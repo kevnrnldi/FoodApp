@@ -1,6 +1,6 @@
 const { get } = require('mongoose')
 const foodModel = require('../models/foodModel')
-
+const orderModel = require('../models/orderModel')
 
 const createFoodController = async (req,res) => {
     try {
@@ -39,7 +39,9 @@ const createFoodController = async (req,res) => {
 
 const getAllFoodController = async (req,res) =>{
     try {
-        const checkFood = await foodModel.find()
+        const {keyword} = req.query
+        const query = keyword ? { title: { $regex: keyword, $options:'i'} } : {}
+        const checkFood = await foodModel.find(query).populate('restaurant','title logoUrl')
         if(!checkFood){
             return res.status(400).send({
                 success:false,
@@ -178,4 +180,118 @@ const deleteFoodController = async (req, res) => {
     }
 }
 
-module.exports = { createFoodController, getAllFoodController, getFoodController, getFoodByRestaurantController, updateFoodController, deleteFoodController } 
+const placeOrderController = async (req, res) =>{
+    try {
+        const {cart } = req.body
+        if(!cart){
+            return res.status(400).send({
+                success:false,
+                message:'Please Fill All The Fields'
+            })
+        }  
+        let total = 0
+        cart.map((item) => {
+            total+= item.price
+        }) 
+        const newOrder = new orderModel({
+            foods:cart,
+            payment: total,
+            buyer:req.user.id
+        })
+        await newOrder.save()
+        res.status(201).send({
+            success:true,
+            message:'Order Created',
+            totalPrice: total,
+            newOrder
+        })
+    } catch (e) {
+        res.status(500).send({
+            success:false,
+            message:e.message
+        })
+    }
+}
+
+const updateOrderController = async (req, res) => {
+    try {
+        const id = req.params.id
+        const {status} = req.body
+        const updateOrder = await orderModel.findByIdAndUpdate({_id:id}, {status}, {new:true, runValidators:true})
+        if(!updateOrder){
+            return res.status(400).send({
+                success:false,
+                message:'Order Not Found'
+            })
+        }
+        res.status(200).send({
+            success:true,
+            message:'Order Updated',
+            updateOrder
+        }) 
+    } catch (e) {
+        res.status(500).send({
+            success:false,
+            message:e.message
+        })
+    }
+}
+
+const userOrderController = async (req, res) => {
+    try {
+        const id = req.user.id
+        const userOrder = await orderModel.find({buyer:id})
+        .populate('foods','title price imageUrl').populate('buyer','userName phone address')
+        if(!userOrder){
+            return res.status(400).send({
+                success:false,
+                message:'Order Not Found'
+            })
+        }
+        if(userOrder.length === 0){
+            return res.status(400).send({
+                success:false,
+                message:'No Order Found'
+            })
+        }
+        res.status(200).send({
+            success:true,
+            message:'Order Found',
+            userOrder
+        })
+    } catch (e) {
+        res.status(500).send({
+            success:false,
+            message:e.message
+        })
+    } 
+}
+
+const getAllOrderController = async (req, res) => {
+    try {
+        const {keyword} = req.query
+        const query = keyword ? { title: { $regex: keyword, $options: 'i' } } : {};
+        const checkOrder = await orderModel.find(query).populate('foods','title price imageUrl').populate('buyer','userName phone address')
+        if(!checkOrder){
+            return res.status(400).send({
+                success:false,
+                message:'Order Not Found'
+            })
+        }
+        res.status(200).send({
+            success:true,
+            message:'Order Found',
+            total: checkOrder.length,
+            checkOrder
+        })
+    } catch (e) {
+        res.status(500).send({
+            success:false,
+            message:e.message
+        })
+    }
+}
+module.exports = { createFoodController, getAllFoodController, getFoodController, 
+    getFoodByRestaurantController, updateFoodController, 
+    deleteFoodController, placeOrderController, 
+    updateOrderController, userOrderController, getAllOrderController } 
