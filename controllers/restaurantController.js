@@ -1,17 +1,34 @@
 const restaurantModel = require('../models/restaurantModel')
+const {cloudinary} = require('../middlewares/uploadMiddleware')
 
 const createRestaurantController = async (req,res) => {
 try{
     const {title, imageUrl, food, time, pickup, delivery, isOpen, logoUrl, rating, ratingCount, code, coordinate} = req.body
-    if(!title || !coordinate){
+    if(!req.file){
+        return res.status(400).send({
+            success:false,
+            message:'Please Upload Image'
+        })
+    }
+    if(!title ){
         return res.status(400).send({
             success:false,
             message:'Masukkan Data Anda dengan benar'
         })
     }
+
+    //ubah letak file dari buffer(ram) ke base64(cloudinary)
+    const b64 = Buffer.from(req.file.buffer).toString('base64')
+    const dataURL = "data:" + req.file.mimetype + ";base64," + b64
+
+    const uploadResponse = await cloudinary.uploader.upload(dataURL, {
+        folder: "food-app-project/restaurant"
+    })
+
+
     const newRestaurant = new restaurantModel({
             title,
-            imageUrl,
+            imageUrl: uploadResponse.secure_url,
             food,
             time,
             pickup,

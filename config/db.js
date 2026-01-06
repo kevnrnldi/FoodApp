@@ -4,6 +4,7 @@ const colors = require('colors');
 //function mongoDB database connection
 const connectDB = async () => {
     try {
+        console.log("ALAMAT SERVER:", process.env.MONGO_URL);
         await mongoose.connect(process.env.MONGO_URL);
         console.log('MongoDB is connected',mongoose.connection.host .bgGreen .white );
     } catch (error) {

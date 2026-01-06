@@ -1,10 +1,17 @@
 const { get } = require('mongoose')
 const foodModel = require('../models/foodModel')
 const orderModel = require('../models/orderModel')
+const {cloudinary} = require('../middlewares/uploadMiddleware')
 
 const createFoodController = async (req,res) => {
     try {
         const { title, description, price, imageUrl, foodTags, category, code, isAvailable, restaurant, rating, ratingCount } = req.body
+        if(!req.file){
+            return res.status(400).send({
+                success:false,
+                message:'Please Upload Image'
+            })
+        }
         if(!title || !description || !price || !restaurant){
             return res.status(400).send({
                 success:false,
@@ -12,8 +19,21 @@ const createFoodController = async (req,res) => {
             
             })
         }
+
+        //ubah letak file dari buffer(ram) ke base64(cloudinary)
+        const b64 = Buffer.from(req.file.buffer).toString('base64')
+        const dataURL = "data:" + req.file.mimetype + ";base64," + b64
+
+        const uploadResponse = await cloudinary.uploader.upload(dataURL,{
+            folder: "food-app-project/food"
+        })
+
         const newFood = new foodModel({
-            title, description, price, imageUrl, foodTags, category, code, isAvailable, restaurant, rating, ratingCount
+            title, 
+            description, 
+            price, 
+            imageUrl: uploadResponse.secure_url,
+            foodTags, category, code, isAvailable, restaurant, rating, ratingCount
         })
 
         if(rating > 5 || rating < 0){
